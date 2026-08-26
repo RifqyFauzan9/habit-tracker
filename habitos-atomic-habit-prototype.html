@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HabitOS — Atomic Habit Tracker Prototype</title>
+<style>
+:root{
+  --bg:#f4f7f2; --card:#fff; --ink:#17221b; --muted:#718078;
+  --line:#e5ebe5; --green:#2f6b4f; --green2:#dff1e6; --lime:#b9e58a;
+  --orange:#f4a261; --red:#d96b5f; --nav:#fbfcfa; --shadow:0 18px 45px rgba(31,55,42,.10);
+}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(135deg,#e9f0e8,#f7f3eb);color:var(--ink)}
+button,input{font:inherit} button{cursor:pointer;border:0}
+.app{min-height:100vh;display:flex;justify-content:center;padding:28px}
+.phone{width:390px;min-height:844px;background:var(--bg);border:1px solid #dce4dd;border-radius:38px;box-shadow:0 28px 80px rgba(35,57,44,.22);overflow:hidden;position:relative}
+.status{height:28px;padding:8px 22px 0;display:flex;justify-content:space-between;font-size:11px;font-weight:700}
+.screen{display:none;padding:18px 20px 105px;min-height:816px}.screen.active{display:block}
+h1,h2,h3,p{margin:0}.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:800;color:var(--green)}
+h1{font-size:29px;line-height:1.05;margin-top:7px;letter-spacing:-.04em}h2{font-size:22px;letter-spacing:-.03em}h3{font-size:15px}
+.muted{color:var(--muted);font-size:13px;line-height:1.45}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.iconbtn{width:38px;height:38px;border-radius:13px;background:#fff;border:1px solid var(--line);font-size:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 7px 25px rgba(35,57,44,.045)}
+.hero{background:linear-gradient(145deg,#2f6b4f,#234b39);color:white;border:0;padding:20px;border-radius:26px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(185,229,138,.16);right:-45px;top:-45px}
+.hero .muted{color:#dce9e0}.hero h2{font-size:25px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.stack{display:grid;gap:12px}.gap8{gap:8px}
+.progress{height:7px;background:#e8eee9;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--green);border-radius:99px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{padding:9px 12px;border-radius:99px;background:#eef3ee;color:#506158;font-size:12px;font-weight:700}.chip.sel{background:var(--green);color:#fff}
+.primary{width:100%;padding:14px 16px;border-radius:16px;background:var(--green);color:#fff;font-weight:800}.secondary{padding:13px 16px;border-radius:15px;background:#edf2ee;color:var(--green);font-weight:800}.ghost{background:transparent;color:var(--muted);font-weight:700}
+.check{width:42px;height:42px;border-radius:14px;border:2px solid #cdd8cf;background:#fff;color:transparent;font-size:20px;transition:.15s}.check.done{background:var(--green);border-color:var(--green);color:#fff}
+.habit{padding:14px;border:1px solid var(--line);border-radius:18px;background:#fff}.habit .title{font-weight:800;font-size:14px}.tag{font-size:10px;font-weight:800;padding:5px 8px;border-radius:99px;background:var(--green2);color:var(--green)}
+.section{margin-top:22px}.sectionhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.link{color:var(--green);font-size:12px;font-weight:800}
+.nav{position:absolute;bottom:0;left:0;right:0;height:82px;background:rgba(251,252,250,.96);backdrop-filter:blur(16px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 8px 10px;z-index:10}
+.nav button{background:none;color:#8a958e;font-size:10px;font-weight:800;display:flex;flex-direction:column;gap:5px;align-items:center;min-width:60px}.nav button.active{color:var(--green)}.nav .ni{font-size:20px;line-height:1}
+.back{background:none;font-size:20px}.step{display:flex;gap:5px}.step i{height:4px;width:28px;border-radius:9px;background:#dfe7e0}.step i.on{background:var(--green)}
+.bignum{font-size:46px;font-weight:900;letter-spacing:-.06em}.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.cell{height:19px;border-radius:5px;background:#e7ede8}.cell.l1{background:#d2e8d8}.cell.l2{background:#9bc7a7}.cell.l3{background:#5e9c76}.cell.l4{background:#2f6b4f}
+textarea,input[type=text],input[type=time]{width:100%;border:1px solid var(--line);background:#fbfcfa;border-radius:15px;padding:13px;outline:none}.choice{padding:15px;border:1px solid var(--line);border-radius:17px;background:#fff;text-align:left}.choice.active{border:2px solid var(--green);background:#f1f8f3}
+.modal{position:absolute;inset:0;background:rgba(20,30,24,.46);z-index:30;display:none;align-items:flex-end}.modal.show{display:flex}.sheet{background:#fff;width:100%;border-radius:28px 28px 0 0;padding:20px;max-height:85%;overflow:auto}.grab{width:40px;height:4px;background:#dce3dd;border-radius:99px;margin:0 auto 18px}
+.toast{position:absolute;left:20px;right:20px;bottom:96px;background:#17221b;color:white;padding:13px 15px;border-radius:15px;z-index:40;display:none;font-size:12px;font-weight:700}.toast.show{display:block}
+.timeline{border-left:2px solid #dce6de;margin-left:7px;padding-left:18px}.event{position:relative;margin-bottom:16px}.event:before{content:"";position:absolute;left:-25px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--green)}
+.divider{height:1px;background:var(--line);margin:13px 0}.toggle{width:44px;height:25px;border-radius:99px;background:#d9e1da;padding:3px}.toggle i{display:block;width:19px;height:19px;background:#fff;border-radius:50%}.toggle.on{background:var(--green)}.toggle.on i{margin-left:19px}
+.badge{padding:7px 9px;background:#f5eee0;color:#9b6a2d;border-radius:9px;font-size:10px;font-weight:900}
+@media(max-width:500px){body{background:var(--bg)}.app{padding:0}.phone{border-radius:0;border:0;width:100%;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="app"><div class="phone">
+<div class="status"><span>9:41</span><span>● ● ▰</span></div>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+  <div class="top"><div><div class="eyebrow">Sunday · Aug 23</div><h1>Build the person<br>you want to be.</h1></div><button class="iconbtn" onclick="go('profile')">RF</button></div>
+  <div class="hero">
+    <div class="row"><div><div class="muted">Today’s progress</div><div class="bignum" id="homeCount">1/3</div></div><div style="font-size:35px">🌱</div></div>
+    <div class="progress" style="margin-top:13px;background:#527966"><i id="homeProgress" style="width:33%;background:#b9e58a"></i></div>
+    <div class="muted" style="margin-top:10px">Small votes compound into identity.</div>
+  </div>
+  <div class="section"><div class="sectionhead"><h3>Today</h3><span class="link" onclick="go('heatmap')">View history</span></div>
+    <div class="stack">
+      <div class="habit row"><div><span class="tag">DISCIPLINED</span><div class="title" style="margin-top:7px">Morning Routine</div><div class="muted">07:30 · Bedroom → Kitchen · 3 steps</div></div><button class="check done" onclick="toggleHabit(this)">✓</button></div>
+      <div class="habit row"><div><span class="tag">HEALTHY</span><div class="title" style="margin-top:7px">10 min walk</div><div class="muted">16:30 · Neighborhood</div></div><button class="check" onclick="toggleHabit(this)">✓</button></div>
+      <div class="habit row"><div><span class="tag">LEARNER</span><div class="title" style="margin-top:7px">Read 10 pages</div><div class="muted">21:00 · Desk</div></div><button class="check" onclick="toggleHabit(this)">✓</button></div>
+    </div>
+  </div>
+  <div class="section"><div class="sectionhead"><h3>Your identity</h3><span class="link" onclick="go('identity')">See reflection</span></div>
+    <div class="card row"><div><div class="muted">You’ve voted for</div><strong>DISCIPLINED</strong><div class="muted">38 times</div></div><div class="bignum">38</div></div>
+  </div>
+</section>
+
+<!-- ONBOARDING -->
+<section id="onboarding" class="screen">
+  <div class="top"><button class="back" onclick="go('home')">×</button><div class="step"><i class="on"></i><i></i><i></i><i></i><i></i></div><span>1/5</span></div>
+  <div style="margin-top:30px"><div class="eyebrow">Let’s map your day</div><h1>What usually happens<br>when you wake up?</h1><p class="muted" style="margin-top:12px">Biar kami tahu harimu seperti apa, dan bisa menaruh kebiasaan baru di waktu yang pas.</p></div>
+  <div class="section stack">
+    <button class="choice active" onclick="selectChoice(this)">☕ Breakfast / coffee</button>
+    <button class="choice" onclick="selectChoice(this)">🚿 Get ready</button>
+    <button class="choice" onclick="selectChoice(this)">🧘 Exercise</button>
+    <button class="choice" onclick="selectChoice(this)">🙏 Ibadah</button>
+    <button class="choice" onclick="selectChoice(this)">🧹 Household chores</button>
+    <button class="choice" onclick="selectChoice(this)">＋ Lainnya</button>
+  </div>
+  <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('onboard2')">Continue</button></div>
+</section>
+
+<section id="onboard2" class="screen">
+  <div class="top"><button class="back" onclick="go('onboarding')">‹</button><div class="step"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div><span>2/5</span></div>
+  <div style="margin-top:25px"><div class="eyebrow">09:00 — 12:00</div><h1>What’s usually in<br>this block?</h1><p class="muted" style="margin-top:10px">Tap everything that applies. Skip if it’s mostly free.</p></div>
+  <div class="section chips">
+    <button class="chip sel" onclick="this.classList.toggle('sel')">💻 Work</button><button class="chip" onclick="this.classList.toggle('sel')">📚 Study</button><button class="chip" onclick="this.classList.toggle('sel')">🚗 Commute</button><button class="chip" onclick="this.classList.toggle('sel')">🙏 Ibadah</button><button class="chip" onclick="this.classList.toggle('sel')">👨‍👩‍👧 Family</button><button class="chip" onclick="this.classList.toggle('sel')">🍳 Cook</button>
+  </div>
+  <div style="position:absolute;bottom:28px;left:20px;right:20px;display:flex;gap:8px"><button class="secondary" style="width:35%" onclick="go('onboard3')">Skip</button><button class="primary" onclick="go('onboard3')">Continue</button></div>
+</section>
+
+<section id="onboard3" class="screen">
+  <div class="top"><button class="back" onclick="go('onboard2')">‹</button><div class="step"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></div><span>3/5</span></div>
+  <div style="margin-top:25px"><div class="eyebrow">12:00 — 18:00</div><h1>And your afternoon?</h1><p class="muted" style="margin-top:10px">Pick the big things, not every minute.</p></div>
+  <div class="section chips"><button class="chip sel" onclick="this.classList.toggle('sel')">💻 Work</button><button class="chip" onclick="this.classList.toggle('sel')">🏃 Exercise</button><button class="chip" onclick="this.classList.toggle('sel')">🙏 Ibadah</button><button class="chip" onclick="this.classList.toggle('sel')">🏠 Home</button><button class="chip" onclick="this.classList.toggle('sel')">😌 Free time</button></div>
+  <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('onboard4')">Continue</button></div>
+</section>
+
+<section id="onboard4" class="screen">
+  <div class="top"><button class="back" onclick="go('onboard3')">‹</button><div class="step"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div><span>4/5</span></div>
+  <div style="margin-top:25px"><div class="eyebrow">18:00 — bedtime</div><h1>What anchors your<br>evening?</h1></div>
+  <div class="section stack"><button class="choice active" onclick="selectChoice(this)">🍽 Dinner</button><button class="choice" onclick="selectChoice(this)">👨‍👩‍👧 Family time</button><button class="choice" onclick="selectChoice(this)">📱 Wind down</button><button class="choice" onclick="selectChoice(this)">📖 Read</button><button class="choice" onclick="selectChoice(this)">🙏 Ibadah</button></div>
+  <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('onboard5')">Continue</button></div>
+</section>
+
+<section id="onboard5" class="screen">
+  <div class="top"><button class="back" onclick="go('onboard4')">‹</button><div class="step"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></div><span>5/5</span></div>
+  <div style="margin-top:25px"><div class="eyebrow">Your map is ready</div><h1>One last thing:<br>how should we use it?</h1><p class="muted" style="margin-top:10px">We’ll use your existing routine to suggest realistic places for new habits.</p></div>
+  <div class="section card"><div class="row"><strong>Morning</strong><span class="tag">06:00–09:00</span></div><div class="divider"></div><div class="row"><strong>Work / study</strong><span class="tag">09:00–12:00</span></div><div class="divider"></div><div class="row"><strong>Afternoon</strong><span class="tag">12:00–18:00</span></div><div class="divider"></div><div class="row"><strong>Evening</strong><span class="tag">18:00–22:30</span></div></div>
+  <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('home');toast('Routine mapped. You can edit it anytime in Settings.')">Finish setup</button></div>
+</section>
+
+<!-- ADD HABIT -->
+<section id="add" class="screen">
+ <div class="top"><button class="back" onclick="go('home')">‹</button><div class="eyebrow">NEW HABIT</div><span></span></div>
+ <h1>What do you want<br>to practice?</h1><p class="muted" style="margin-top:10px">Make it specific enough that your future self knows exactly what to do.</p>
+ <div class="section stack">
+  <label class="muted">Habit name<input id="habitName" type="text" value="Read 10 pages" /></label>
+  <label class="muted">Where?<input type="text" value="At my desk" /></label>
+  <div><div class="muted" style="margin-bottom:8px">When?</div><div class="row"><input type="text" value="Mon · Wed · Fri" /><input type="time" value="21:00" style="width:110px" /></div></div>
+  <div><div class="muted" style="margin-bottom:8px">This helps me become someone who… <span style="color:#aaa">(optional)</span></div><div class="chips"><button class="chip sel">LEARNER</button><button class="chip">DISCIPLINED</button><button class="chip">CALM</button><button class="chip">＋ Create</button></div></div>
+ </div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('ambiguity')">Ask HabitOS to check it</button></div>
+</section>
+
+<section id="ambiguity" class="screen">
+ <div class="top"><button class="back" onclick="go('add')">‹</button><span class="eyebrow">AI CHECK</span><span></span></div>
+ <div class="card" style="margin-top:55px;text-align:center;padding:24px">
+   <div style="font-size:42px">✨</div><div class="eyebrow" style="margin-top:10px">Looks clear</div><h2 style="margin-top:7px">“Read 10 pages”</h2>
+   <p class="muted" style="margin-top:10px">Actionable, specific location, and a realistic time. Let’s find the best slot around your existing routine.</p>
+   <button class="primary" style="margin-top:20px" onclick="go('negotiate')">Find my best slot</button>
+ </div>
+</section>
+
+<!-- NEGOTIATION -->
+<section id="negotiate" class="screen">
+ <div class="top"><button class="back" onclick="go('ambiguity')">‹</button><span class="eyebrow">SCHEDULE MERGE</span><span>1/3</span></div>
+ <div style="margin-top:38px"><div class="eyebrow">A spot that fits</div><h1>How about<br>21:00 at your desk?</h1><p class="muted" style="margin-top:12px">After dinner and before your usual wind-down. That window is usually open.</p></div>
+ <div class="section card"><div class="row"><div><strong>Read 10 pages</strong><div class="muted">Mon · Wed · Fri</div></div><span class="tag">LEARNER</span></div><div class="divider"></div><div class="muted">Why this slot?</div><div style="margin-top:6px;font-size:13px">It follows an existing anchor instead of competing with your busiest block.</div></div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px;display:flex;gap:9px"><button class="secondary" style="width:32%" onclick="go('negotiate2')">Change</button><button class="primary" onclick="go('groupoffer')">Looks good</button></div>
+</section>
+<section id="negotiate2" class="screen">
+ <div class="top"><button class="back" onclick="go('negotiate')">‹</button><span class="eyebrow">WHAT SHOULD CHANGE?</span><span>2/3</span></div>
+ <h1 style="margin-top:45px">Tell me what<br>doesn’t work.</h1><p class="muted" style="margin-top:10px">One short reason is enough. I’ll avoid the same kind of slot.</p>
+ <div class="section"><textarea rows="4" placeholder="e.g. I’m usually helping the kids at that time"></textarea></div>
+ <div class="section card"><div class="muted">Previous suggestion</div><strong>21:00 · Desk</strong><div class="muted" style="margin-top:4px">I’ll keep this rejection in mind.</div></div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('negotiate3')">Try another slot</button></div>
+</section>
+<section id="negotiate3" class="screen">
+ <div class="top"><button class="back" onclick="go('negotiate2')">‹</button><span class="eyebrow">NEW SUGGESTION</span><span>2/3</span></div>
+ <div style="margin-top:50px"><div class="eyebrow">How about this?</div><h1>06:45 after<br>your morning coffee.</h1><p class="muted" style="margin-top:12px">You said mornings usually have a short quiet window. This is different from the evening slot you rejected.</p></div>
+ <div class="section card"><div class="row"><strong>06:45</strong><span class="tag">BEFORE WORK</span></div><div class="muted" style="margin-top:7px">Coffee → Read → Get ready</div></div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px;display:flex;gap:9px"><button class="secondary" onclick="go('selfschedule')">Change</button><button class="primary" onclick="go('groupoffer')">Use this</button></div>
+</section>
+<section id="selfschedule" class="screen">
+ <div class="top"><button class="back" onclick="go('negotiate3')">‹</button><span class="eyebrow">YOUR SCHEDULE</span><span></span></div>
+ <h1 style="margin-top:35px">You choose the slot.</h1><p class="muted" style="margin-top:10px">We tried two suggestions. No need to debate it further.</p>
+ <div class="section stack"><input type="time" value="20:30"><button class="choice active">Mon · Wed · Fri</button><button class="choice">At my desk</button></div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px"><button class="primary" onclick="go('groupoffer')">Save my schedule</button></div>
+</section>
+<section id="groupoffer" class="screen">
+ <div class="top"><button class="back" onclick="go('home')">×</button><span class="eyebrow">GROUP</span><span></span></div>
+ <div style="margin-top:70px;text-align:center"><div style="font-size:48px">➕</div><h1 style="margin-top:12px">Add another habit<br>after this one?</h1><p class="muted" style="margin-top:12px">If yes, it becomes another step in the same group and shares one reminder + one daily tap.</p></div>
+ <div style="position:absolute;bottom:28px;left:20px;right:20px;display:grid;gap:9px"><button class="primary" onclick="go('add')">Yes, add another</button><button class="secondary" onclick="go('home');toast('Morning Routine saved.')">No, finish</button></div>
+</section>
+
+<!-- IDENTITY -->
+<section id="identity" class="screen">
+ <div class="top"><div><div class="eyebrow">YOUR IDENTITY</div><h2 style="margin-top:5px">Who you’re becoming</h2></div><button class="iconbtn" onclick="go('profile')">⚙</button></div>
+ <div class="hero"><div class="muted">Your identity in action</div><h2 style="margin-top:7px">You’ve chosen to be<br>a disciplined person.</h2><div class="muted" style="margin-top:10px">38 votes · 2 habits are still building</div></div>
+ <div class="section stack">
+  <div class="card"><div class="row"><div><span class="tag">PERMANENT</span><h3 style="margin-top:9px">Morning Routine</h3><div class="muted">Mastered Aug 04 · still part of your day</div></div><div style="font-size:26px">✓</div></div></div>
+  <div class="card"><div class="row"><div><span class="tag" style="background:#fff0df;color:#a86b2d">BUILDING</span><h3 style="margin-top:9px">10 min walk</h3><div class="muted">18 / 40 identity points</div></div><div style="width:65px"><div class="progress"><i style="width:45%"></i></div></div></div></div>
+ </div>
+ <div class="section"><div class="sectionhead"><h3>Identity points</h3></div><div class="card"><div class="row"><span>DISCIPLINED</span><strong>38</strong></div><div class="divider"></div><div class="row"><span>HEALTHY</span><strong>18</strong></div><div class="divider"></div><div class="row"><span>LEARNER</span><strong>12</strong></div></div></div>
+</section>
+
+<!-- HEATMAP -->
+<section id="heatmap" class="screen">
+ <div class="top"><div><div class="eyebrow">CONSISTENCY</div><h2 style="margin-top:5px">Your trail</h2></div><button class="iconbtn" onclick="go('home')">×</button></div>
+ <div class="card"><div class="row"><div><div class="muted">Current streak</div><div class="bignum">7</div></div><div style="text-align:right"><div class="muted">Longest</div><strong style="font-size:20px">18 days</strong></div></div><div class="divider"></div><div class="muted">August · 84% consistency</div><div class="heat" id="heat" style="margin-top:12px"></div></div>
+ <div class="section stack"><div class="row"><h3>By group</h3><span class="link">Monthly</span></div>
+  <div class="card row"><div><strong>Morning Routine</strong><div class="muted">Mastered · read-only history</div></div><strong>94%</strong></div>
+  <div class="card row"><div><strong>10 min walk</strong><div class="muted">Building</div></div><strong>78%</strong></div>
+  <div class="card row"><div><strong>Read 10 pages</strong><div class="muted">Building</div></div><strong>82%</strong></div>
+ </div>
+</section>
+
+<!-- FINANCE -->
+<section id="finance" class="screen">
+ <div class="top"><div><div class="eyebrow">OPTIONAL REWARD</div><h2 style="margin-top:5px">Wish fund</h2></div><button class="iconbtn" onclick="go('profile')">⚙</button></div>
+ <div class="card" style="background:#f7f0df;border-color:#eee1c6"><div class="badge">MANUAL ONLY</div><h3 style="margin-top:10px">No bank connection.</h3><p class="muted" style="margin-top:6px">HabitOS never moves money. You transfer it yourself in your banking app.</p></div>
+ <div class="section card"><div class="muted">August allowance</div><div class="row" style="margin-top:4px"><div class="bignum">30%</div><span class="muted">of income</span></div><div class="progress" style="margin-top:13px"><i style="width:43%"></i></div><div class="muted" style="margin-top:7px">13% allocated · 17% remaining</div></div>
+ <div class="section"><h3>When you complete a group</h3><div class="card" style="margin-top:10px"><div class="row"><div><strong>Allocate 1%?</strong><div class="muted">13% of 30% used this month</div></div><div style="display:flex;gap:6px"><button class="secondary" onclick="toast('Skipped for now.')">Nanti</button><button class="primary" style="width:auto" onclick="toast('Marked as transferred manually.')">Sudah</button></div></div></div></div>
+</section>
+
+<!-- PROFILE / SETTINGS -->
+<section id="profile" class="screen">
+ <div class="top"><div><div class="eyebrow">PROFILE</div><h2 style="margin-top:5px">Rifqy</h2></div><div style="width:50px;height:50px;border-radius:18px;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:900">RF</div></div>
+ <div class="section stack">
+  <div class="card"><div class="row"><div><strong>Routine map</strong><div class="muted">4 blocks · editable anytime</div></div><span class="link" onclick="go('onboarding')">Edit</span></div></div>
+  <div class="card"><div class="row"><div><strong>Notifications</strong><div class="muted">One reminder per group</div></div><button class="toggle on" onclick="this.classList.toggle('on');this.querySelector('i').style.marginLeft=this.classList.contains('on')?'19px':'0'"><i></i></button></div></div>
+  <div class="card"><div class="row"><div><strong>Wish fund</strong><div class="muted">Manual rewards · 1% increment</div></div><span class="link" onclick="go('finance')">Open</span></div></div>
+  <div class="card"><div class="row"><div><strong>Mastered habits</strong><div class="muted">2 permanent routines</div></div><span class="link">View</span></div></div>
+ </div>
+ <div class="section"><div class="eyebrow">DESIGN PRINCIPLE</div><p style="font-size:16px;font-weight:800;line-height:1.35;margin-top:7px">“The tracker is temporary. The identity stays.”</p></div>
+</section>
+
+<div class="nav">
+ <button class="active" data-go="home" onclick="go('home')"><span class="ni">⌂</span>Today</button>
+ <button data-go="add" onclick="go('add')"><span class="ni">＋</span>Add</button>
+ <button data-go="identity" onclick="go('identity')"><span class="ni">◉</span>Identity</button>
+ <button data-go="heatmap" onclick="go('heatmap')"><span class="ni">▦</span>History</button>
+ <button data-go="profile" onclick="go('profile')"><span class="ni">○</span>Profile</button>
+</div>
+
+<div id="toast" class="toast"></div>
+</div></div>
+<script>
+const screens=[...document.querySelectorAll('.screen')];
+function go(id){
+ screens.forEach(s=>s.classList.toggle('active',s.id===id));
+ document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.go===id));
+ if(['onboarding','onboard2','onboard3','onboard4','onboard5','ambiguity','negotiate','negotiate2','negotiate3','selfschedule','groupoffer'].includes(id))
+   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+ window.scrollTo(0,0);
+}
+function toggleHabit(btn){
+ btn.classList.toggle('done'); btn.textContent=btn.classList.contains('done')?'✓':'✓';
+ const done=document.querySelectorAll('#home .check.done').length;
+ document.getElementById('homeCount').textContent=done+'/3';
+ document.getElementById('homeProgress').style.width=(done/3*100)+'%';
+ if(done===3) toast('All done. That’s another vote for who you’re becoming.');
+}
+function selectChoice(el){el.parentElement.querySelectorAll('.choice').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>t.classList.remove('show'),2400)}
+const heat=document.getElementById('heat');for(let i=0;i<84;i++){const d=document.createElement('div');d.className='cell '+(['l1','l2','l3','l4'][Math.floor(Math.random()*5)-1]||'');heat.appendChild(d)}
+</script>
+</body></html>
