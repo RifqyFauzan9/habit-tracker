@@ -18,5 +18,9 @@
     "expo-env.d.ts",
     "nativewind-env.d.ts",
     "react-native-css-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "supabase/functions"
   ]
 }
