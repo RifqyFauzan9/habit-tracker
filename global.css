@@ -32,6 +32,19 @@
     --ring: 212 212 212;
     --accent: 247 247 247;
     --accent-foreground: 52 52 52;
+    --brand: 47 107 79;
+    --brand-strong: 35 75 57;
+    --brand-soft: 223 241 230;
+    --lime: 185 229 138;
+    --surface: 244 247 242;
+    --surface-card: 255 255 255;
+    --surface-sunken: 238 243 238;
+    --ink: 23 34 27;
+    --ink-muted: 113 128 120;
+    --hairline: 229 235 229;
+    --warn: 168 107 45;
+    --warn-soft: 255 240 223;
+    --danger: 217 107 95;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -53,6 +66,19 @@
       --accent: 38 38 38;
       --accent-foreground: 250 250 250;
       --ring: 115 115 115;
+      --brand: 124 191 154;
+      --brand-strong: 154 210 178;
+      --brand-soft: 28 50 39;
+      --lime: 185 229 138;
+      --surface: 12 18 14;
+      --surface-card: 23 31 26;
+      --surface-sunken: 30 39 33;
+      --ink: 234 241 236;
+      --ink-muted: 141 156 147;
+      --hairline: 40 51 43;
+      --warn: 227 176 110;
+      --warn-soft: 48 39 25;
+      --danger: 232 133 121;
     }
   }
 
@@ -76,6 +102,19 @@
     --accent: 38 38 38;
     --accent-foreground: 250 250 250;
     --ring: 115 115 115;
+    --brand: 124 191 154;
+    --brand-strong: 154 210 178;
+    --brand-soft: 28 50 39;
+    --lime: 185 229 138;
+    --surface: 12 18 14;
+    --surface-card: 23 31 26;
+    --surface-sunken: 30 39 33;
+    --ink: 234 241 236;
+    --ink-muted: 141 156 147;
+    --hairline: 40 51 43;
+    --warn: 227 176 110;
+    --warn-soft: 48 39 25;
+    --danger: 232 133 121;
   }
 
   :root.light {
@@ -96,6 +135,19 @@
     --ring: 212 212 212;
     --accent: 247 247 247;
     --accent-foreground: 52 52 52;
+    --brand: 47 107 79;
+    --brand-strong: 35 75 57;
+    --brand-soft: 223 241 230;
+    --lime: 185 229 138;
+    --surface: 244 247 242;
+    --surface-card: 255 255 255;
+    --surface-sunken: 238 243 238;
+    --ink: 23 34 27;
+    --ink-muted: 113 128 120;
+    --hairline: 229 235 229;
+    --warn: 168 107 45;
+    --warn-soft: 255 240 223;
+    --danger: 217 107 95;
   }
 }
 
@@ -119,4 +171,18 @@
   --color-ring: rgb(var(--ring));
   --color-accent: rgb(var(--accent));
   --color-accent-foreground: rgb(var(--accent-foreground));
+
+  --color-brand: rgb(var(--brand));
+  --color-brand-strong: rgb(var(--brand-strong));
+  --color-brand-soft: rgb(var(--brand-soft));
+  --color-lime: rgb(var(--lime));
+  --color-surface: rgb(var(--surface));
+  --color-surface-card: rgb(var(--surface-card));
+  --color-surface-sunken: rgb(var(--surface-sunken));
+  --color-ink: rgb(var(--ink));
+  --color-ink-muted: rgb(var(--ink-muted));
+  --color-hairline: rgb(var(--hairline));
+  --color-warn: rgb(var(--warn));
+  --color-warn-soft: rgb(var(--warn-soft));
+  --color-danger: rgb(var(--danger));
 }
