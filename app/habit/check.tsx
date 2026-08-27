@@ -1,10 +1,10 @@
 import { Screen } from '@/components/app/screen';
 import { Card, Eyebrow, ModalHeader, Muted, PrimaryButton, SecondaryButton, Subtitle } from '@/components/app/ui';
-import { checkAmbiguity } from '@/lib/mock-ai';
+import { checkAmbiguity, type AmbiguityResult } from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 
 export default function AmbiguityCheckScreen() {
   const router = useRouter();
@@ -14,16 +14,45 @@ export default function AmbiguityCheckScreen() {
   const subject = appending ? steps[steps.length - 1] : draft?.name ?? '';
   const [answer, setAnswer] = useState('');
   const [resolved, setResolved] = useState(false);
+  const [result, setResult] = useState<AmbiguityResult | null>(null);
+  const [checking, setChecking] = useState(true);
 
-  const result = useMemo(
-    () =>
-      draft
-        ? checkAmbiguity({ ...draft, name: subject })
-        : { clear: false, question: 'Belum ada kebiasaan yang diisi.', note: '' },
-    [draft, subject]
-  );
+  // PRD §4.2.1: runs once on entry. A failure never blocks saving — the edge
+  // function already degrades to "clear" when the model is unreachable.
+  useEffect(() => {
+    let cancelled = false;
+    if (!draft) {
+      setChecking(false);
+      return;
+    }
+    checkAmbiguity({ ...draft, name: subject })
+      .then((res) => {
+        if (!cancelled) setResult(res);
+      })
+      .catch(() => {
+        if (!cancelled) setResult({ clear: true, question: null, note: '', suggestedName: null });
+      })
+      .finally(() => {
+        if (!cancelled) setChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draft, subject]);
 
-  const clear = resolved || result.clear;
+  const clear = resolved || (result?.clear ?? false);
+
+  if (checking) {
+    return (
+      <Screen>
+        <ModalHeader onClose={() => router.back()} label="Cek kejelasan" />
+        <View className="mt-24 items-center">
+          <ActivityIndicator />
+          <Muted className="mt-4">Membaca kebiasaanmu…</Muted>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -48,10 +77,7 @@ export default function AmbiguityCheckScreen() {
                 setResolved(true);
               }}
             />
-            <SecondaryButton
-              label="Lanjut tanpa mengubah"
-              onPress={() => setResolved(true)}
-            />
+            <SecondaryButton label="Lanjut tanpa mengubah" onPress={() => setResolved(true)} />
           </View>
         )
       }
@@ -64,7 +90,7 @@ export default function AmbiguityCheckScreen() {
           <Eyebrow className="mt-3">Sudah jelas</Eyebrow>
           <Subtitle className="mt-2 text-center">&ldquo;{subject}&rdquo;</Subtitle>
           <Muted className="mt-3 text-center">
-            {result.note ||
+            {result?.note ||
               'Actionable, lokasinya spesifik, dan jamnya masuk akal. Sekarang kita cari celah waktu di rutinitasmu.'}
           </Muted>
         </Card>
@@ -73,16 +99,23 @@ export default function AmbiguityCheckScreen() {
           <Card className="p-6">
             <Text className="text-4xl">🤔</Text>
             <Eyebrow className="mt-3">Satu pertanyaan saja</Eyebrow>
-            <Text className="mt-2 text-[19px] font-bold leading-6 text-ink">{result.question}</Text>
-            {result.note ? <Muted className="mt-2">{result.note}</Muted> : null}
+            <Text className="mt-2 text-[19px] font-bold leading-6 text-ink">{result?.question}</Text>
+            {result?.note ? <Muted className="mt-2">{result.note}</Muted> : null}
           </Card>
           <TextInput
             value={answer}
             onChangeText={setAnswer}
-            placeholder="Tulis versi yang lebih spesifik"
+            placeholder={result?.suggestedName ?? 'Tulis versi yang lebih spesifik'}
             placeholderTextColor="rgb(140,152,144)"
             className="mt-4 rounded-2xl border border-hairline bg-surface-card px-4 py-3.5 text-[15px] text-ink"
           />
+          {result?.suggestedName ? (
+            <SecondaryButton
+              label={`Pakai "${result.suggestedName}"`}
+              className="mt-3"
+              onPress={() => setAnswer(result.suggestedName ?? '')}
+            />
+          ) : null}
           <Muted className="mt-3">
             Kamu tetap boleh lanjut tanpa mengubah apa pun — ini cuma satu putaran konfirmasi.
           </Muted>

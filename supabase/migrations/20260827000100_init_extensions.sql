@@ -1,8 +1,12 @@
 -- Extensions and shared helpers.
 -- PRD §5, §8: every table is user-scoped and RLS is on from day one.
 
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
+-- Hosted Supabase keeps extensions in their own schema and runs migrations
+-- without it on the search_path, so both the install and every call below are
+-- schema-qualified. Local and cloud then behave identically.
+create schema if not exists extensions;
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists "pgcrypto" with schema extensions;
 
 -- Reused by every table; never redefine per migration.
 create or replace function public.set_updated_at()

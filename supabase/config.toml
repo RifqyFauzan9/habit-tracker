@@ -22,6 +22,9 @@ additional_redirect_urls = ["habittracker://"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 enable_signup = true
+# Personal use should not open with a login wall; an anonymous user is a real
+# auth.users row, so RLS applies identically and it can be upgraded to email later.
+enable_anonymous_sign_ins = true
 
 [auth.email]
 enable_signup = true

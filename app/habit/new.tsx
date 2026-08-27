@@ -177,9 +177,11 @@ export default function NewHabitScreen() {
             <Pressable
               onPress={() => {
                 if (newTag.trim().length === 0) return;
-                const tag = addIdentityTag(newTag.trim());
-                setTagId(tag.id);
+                const label = newTag.trim();
                 setNewTag('');
+                addIdentityTag(label)
+                  .then((tag) => setTagId(tag.id))
+                  .catch(() => setNewTag(label));
               }}
               className="items-center justify-center rounded-2xl bg-brand-soft px-4"
             >

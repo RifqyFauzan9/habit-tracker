@@ -1,4 +1,5 @@
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
+import { BootGate } from '@/components/app/boot-gate';
 import { ToastProvider } from '@/components/app/toast';
 import '@/global.css';
 import { StoreProvider } from '@/lib/store';
@@ -36,6 +37,7 @@ export default function RootLayout() {
         <StoreProvider>
           <ToastProvider>
             <StatusBar style="dark" />
+            <BootGate>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="onboarding/index" options={{ presentation: 'modal' }} />
@@ -45,6 +47,7 @@ export default function RootLayout() {
               <Stack.Screen name="habit/group" options={{ presentation: 'modal' }} />
               <Stack.Screen name="finance" options={{ presentation: 'modal' }} />
             </Stack>
+            </BootGate>
           </ToastProvider>
         </StoreProvider>
       </GluestackUIProvider>

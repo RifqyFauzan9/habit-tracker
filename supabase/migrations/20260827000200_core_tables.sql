@@ -1,6 +1,6 @@
 -- Core data model — PRD §5.
 -- Conventions: snake_case, TEXT over VARCHAR, TIMESTAMPTZ (UTC), soft delete,
--- uuid_generate_v4() primary keys, partial indexes for the active-row queries.
+-- uuid primary keys, partial indexes for the active-row queries.
 --
 -- Deviation from the house "no foreign keys" rule, on purpose: there is no
 -- application server here (PRD §6.2 — clients talk to Postgres directly), so
@@ -30,7 +30,7 @@ $$;
 -- PRD §4.1 / §4.8: onboarding output, plus mastered groups folded back in as
 -- permanent routine. Both feed the schedule merge engine as context.
 create table public.routine_blocks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   label text not null,
   start_time time not null,
@@ -47,7 +47,7 @@ create table public.routine_blocks (
 -- PRD §4.6: points start at 0 and are a psychological counter only — never a
 -- currency, never redeemable.
 create table public.identity_tags (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   label text not null,
   source text not null default 'manual'
@@ -61,7 +61,7 @@ create table public.identity_tags (
 -- PRD §4.2: the group is the only tracked unit — one schedule, one reminder,
 -- one log, one identity vote per day.
 create table public.habit_groups (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   name text not null,
   days smallint[] not null default '{}',
@@ -85,7 +85,7 @@ create table public.habit_groups (
 -- trigger_type exists in v1 with a single value so event-based habits (§10.1)
 -- can land without a schema migration.
 create table public.habits (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   group_id uuid not null references public.habit_groups (id) on delete cascade,
   name text not null,
@@ -99,7 +99,7 @@ create table public.habits (
 
 -- PRD §5: logs hang off group_id, never habit_id.
 create table public.habit_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   group_id uuid not null references public.habit_groups (id) on delete cascade,
   log_date date not null,
@@ -110,7 +110,7 @@ create table public.habit_logs (
 );
 
 create table public.habit_lifecycle_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   group_id uuid not null references public.habit_groups (id) on delete cascade,
   type text not null
@@ -125,7 +125,7 @@ create table public.habit_lifecycle_events (
 -- PRD §4.3: the whole rejection history of a session is the merge engine input,
 -- so it is stored rather than kept in client memory.
 create table public.negotiation_sessions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   group_id uuid references public.habit_groups (id) on delete cascade,
   draft jsonb not null default '{}'::jsonb,
@@ -140,7 +140,7 @@ create table public.negotiation_sessions (
 
 -- PRD §4.7: percentages only. No nominal amounts, no account data, ever.
 create table public.finance_settings (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   month date not null,
   total_percent numeric(5, 2) not null default 0 check (total_percent between 0 and 100),
@@ -153,7 +153,7 @@ create table public.finance_settings (
 );
 
 create table public.finance_allocation_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   group_id uuid references public.habit_groups (id) on delete set null,
   log_date date not null,
@@ -167,7 +167,7 @@ create table public.finance_allocation_logs (
 -- PRD §6.4 / §7: token instrumentation from day one so cost per user comes from
 -- real data, and doubles as the rate-limit window source.
 create table public.ai_usage_events (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   feature text not null
     check (feature in ('ambiguity_check', 'schedule_merge', 'identity_reflection')),
@@ -184,7 +184,7 @@ create table public.ai_usage_events (
 );
 
 create table public.ai_response_cache (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default extensions.uuid_generate_v4(),
   user_id uuid not null references public.profiles (id) on delete cascade,
   feature text not null,
   cache_key text not null,

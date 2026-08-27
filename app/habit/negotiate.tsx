@@ -1,48 +1,100 @@
 import { Screen } from '@/components/app/screen';
 import { Card, Divider, Eyebrow, ModalHeader, Muted, PrimaryButton, SecondaryButton, Tag, Title } from '@/components/app/ui';
+import { requestSlot, type SlotSuggestion } from '@/lib/api';
 import { describeDays } from '@/lib/date';
-import { suggestSlot, type SlotSuggestion } from '@/lib/mock-ai';
 import { useStore } from '@/lib/store';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
-
-const MAX_ROUNDS = 3;
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 
 export default function NegotiateScreen() {
   const router = useRouter();
-  const { draft, routineBlocks, identityTags, updateDraft } = useStore();
+  const { draft, identityTags, updateDraft } = useStore();
 
+  const [sessionId, setSessionId] = useState<string | undefined>();
+  const [suggestion, setSuggestion] = useState<SlotSuggestion | null>(null);
   const [round, setRound] = useState(1);
+  const [maxRounds, setMaxRounds] = useState(3);
+  const [exhausted, setExhausted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [rejected, setRejected] = useState<{ time: string; reason: string }[]>([]);
   const [asking, setAsking] = useState(false);
   const [reason, setReason] = useState('');
   const [manualTime, setManualTime] = useState(draft?.startTime ?? '21:00');
 
-  const suggestion: SlotSuggestion = useMemo(
-    () =>
-      draft
-        ? suggestSlot(routineBlocks, draft, rejected.map((entry) => entry.time))
-        : { time: '21:00', anchor: '', reason: '' },
-    [draft, routineBlocks, rejected]
+  // The rejection history lives server-side in the negotiation session, so the
+  // model sees every round — not just the last one (PRD §4.3).
+  const ask = useCallback(
+    async (rejectionReason?: string) => {
+      setLoading(true);
+      setFailed(false);
+      try {
+        const result = await requestSlot({
+          sessionId,
+          draft: sessionId
+            ? undefined
+            : {
+                nama: draft?.name,
+                lokasi: draft?.location,
+                hari: draft?.days,
+                durasi_menit: 30,
+                jam_diinginkan: draft?.startTime,
+              },
+          rejectionReason,
+        });
+        setSessionId(result.sessionId);
+        setRound(result.round);
+        setMaxRounds(result.maxRounds);
+        setExhausted(result.exhausted);
+        setSuggestion(result.suggestion);
+      } catch {
+        // §4.3's escape hatch is the same one used when rounds run out: hand
+        // the clock to the user rather than trapping them in a broken loop.
+        setFailed(true);
+        setExhausted(true);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [sessionId, draft]
   );
 
-  const tag = identityTags.find((entry) => entry.id === draft?.identityTagId);
-  const outOfRounds = round > MAX_ROUNDS;
+  useEffect(() => {
+    void ask();
+    // Only on mount: later rounds are triggered by the user rejecting a slot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const accept = (time: string) => {
-    updateDraft({ startTime: time });
+  const tag = identityTags.find((entry) => entry.id === draft?.identityTagId);
+
+  const accept = (startTime: string, endTime?: string) => {
+    updateDraft({ startTime, ...(endTime ? { endTime } : {}) });
     router.push('/habit/group');
   };
 
+  if (loading) {
+    return (
+      <Screen>
+        <ModalHeader onClose={() => router.back()} label="Cari celah waktu" />
+        <View className="mt-24 items-center">
+          <ActivityIndicator />
+          <Muted className="mt-4">Membaca peta rutinitasmu…</Muted>
+        </View>
+      </Screen>
+    );
+  }
+
   // PRD §4.3: after three rounds stop negotiating and hand the clock over.
-  if (outOfRounds) {
+  if (exhausted || !suggestion) {
     return (
       <Screen footer={<PrimaryButton label="Simpan jadwalku" onPress={() => accept(manualTime)} />}>
         <ModalHeader onClose={() => router.back()} label="Jadwalmu sendiri" />
         <Title>Kamu yang pilih{'\n'}jamnya.</Title>
         <Muted className="mt-3">
-          Sudah {MAX_ROUNDS} usulan. Tidak perlu berdebat lebih lama — tentukan sendiri saja.
+          {failed
+            ? 'Usulan otomatis lagi tidak bisa dipakai. Tentukan sendiri saja — tidak ada yang hilang.'
+            : `Sudah ${maxRounds} usulan. Tidak perlu berdebat lebih lama — tentukan sendiri saja.`}
         </Muted>
         <View className="mt-6 gap-3">
           <TextInput
@@ -71,10 +123,11 @@ export default function NegotiateScreen() {
           <PrimaryButton
             label="Coba slot lain"
             onPress={() => {
-              setRejected((prev) => [...prev, { time: suggestion.time, reason: reason.trim() }]);
+              setRejected((prev) => [...prev, { time: suggestion.startTime, reason: reason.trim() }]);
+              const submitted = reason.trim();
               setReason('');
               setAsking(false);
-              setRound(round + 1);
+              void ask(submitted);
             }}
           />
         }
@@ -82,7 +135,7 @@ export default function NegotiateScreen() {
         <ModalHeader
           onClose={() => setAsking(false)}
           label="Apa yang kurang pas?"
-          right={<Text className="text-xs font-bold text-ink-muted">{round}/{MAX_ROUNDS}</Text>}
+          right={<Text className="text-xs font-bold text-ink-muted">{round}/{maxRounds}</Text>}
         />
         <Title>Bilang saja apa{'\n'}yang tidak cocok.</Title>
         <Muted className="mt-3">
@@ -101,7 +154,7 @@ export default function NegotiateScreen() {
         <Card className="mt-4">
           <Muted>Usulan sebelumnya</Muted>
           <Text className="mt-1 text-[15px] font-bold text-ink">
-            {suggestion.time} · {draft?.location}
+            {suggestion.startTime} · {draft?.location}
           </Text>
           <Muted className="mt-1">Penolakan ini akan diingat sepanjang sesi.</Muted>
         </Card>
@@ -110,7 +163,7 @@ export default function NegotiateScreen() {
             <Muted className="mb-2">Sudah ditolak</Muted>
             <View className="gap-2">
               {rejected.map((entry) => (
-                <Card key={entry.time} className="py-3">
+                <Card key={`${entry.time}-${entry.reason}`} className="py-3">
                   <Text className="text-sm font-bold text-ink">{entry.time}</Text>
                   {entry.reason ? <Muted>{entry.reason}</Muted> : null}
                 </Card>
@@ -127,17 +180,21 @@ export default function NegotiateScreen() {
       footer={
         <View className="flex-row gap-2">
           <SecondaryButton label="Ganti" className="w-1/3" onPress={() => setAsking(true)} />
-          <PrimaryButton label="Oke" className="flex-1" onPress={() => accept(suggestion.time)} />
+          <PrimaryButton
+            label="Oke"
+            className="flex-1"
+            onPress={() => accept(suggestion.startTime, suggestion.endTime)}
+          />
         </View>
       }
     >
       <ModalHeader
         onClose={() => router.back()}
         label="Cari celah waktu"
-        right={<Text className="text-xs font-bold text-ink-muted">{round}/{MAX_ROUNDS}</Text>}
+        right={<Text className="text-xs font-bold text-ink-muted">{round}/{maxRounds}</Text>}
       />
       <Eyebrow>{round === 1 ? 'Slot yang cocok' : 'Bagaimana kalau ini?'}</Eyebrow>
-      <Title>{suggestion.time} —{'\n'}{suggestion.anchor.toLowerCase()}.</Title>
+      <Title>{suggestion.startTime} —{'\n'}{suggestion.anchor.toLowerCase()}.</Title>
       <Muted className="mt-3">{suggestion.reason}</Muted>
 
       <Card className="mt-6">

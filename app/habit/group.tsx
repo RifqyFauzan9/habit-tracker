@@ -15,18 +15,29 @@ export default function GroupOfferScreen() {
   const [naming, setNaming] = useState(steps.length > 1);
   const [groupName, setGroupName] = useState(draft?.groupName ?? '');
 
-  const finish = () => {
+  const [saving, setSaving] = useState(false);
+
+  const finish = async () => {
+    if (saving) return;
+    const label = (naming ? groupName : draft?.name) || 'Kebiasaan baru';
     if (naming) updateDraft({ groupName: groupName.trim() || steps[0] });
-    commitDraft();
-    toast.show(`"${(naming ? groupName : draft?.name) || 'Kebiasaan baru'}" tersimpan.`);
-    router.dismissTo('/');
+    setSaving(true);
+    try {
+      await commitDraft();
+      toast.show(`"${label}" tersimpan.`);
+      router.dismissTo('/');
+    } catch (err) {
+      toast.show(err instanceof Error ? err.message : 'Gagal menyimpan.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   // A group with more than one step needs a name; the default is pre-filled so
   // the user only has to press continue (PRD §4.2).
   if (naming) {
     return (
-      <Screen footer={<PrimaryButton label="Simpan grup" onPress={finish} />}>
+      <Screen footer={<PrimaryButton label={saving ? 'Menyimpan…' : 'Simpan grup'} onPress={finish} />}>
         <ModalHeader onClose={() => setNaming(false)} label="Beri nama grup" />
         <Title>Grup ini{'\n'}mau dipanggil apa?</Title>
         <Muted className="mt-3">
@@ -59,7 +70,7 @@ export default function GroupOfferScreen() {
             label="Ya, tambah lagi"
             onPress={() => router.push({ pathname: '/habit/new', params: { append: '1' } })}
           />
-          <SecondaryButton label="Tidak, selesai" onPress={finish} />
+          <SecondaryButton label={saving ? 'Menyimpan…' : 'Tidak, selesai'} onPress={finish} />
         </View>
       }
     >

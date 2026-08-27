@@ -1,7 +1,7 @@
 import { Screen } from '@/components/app/screen';
 import { useToast } from '@/components/app/toast';
 import { Chip, Eyebrow, Muted, PrimaryButton, SecondaryButton, StepDots, Title } from '@/components/app/ui';
-import { ONBOARDING_BLOCKS } from '@/lib/mock-data';
+import { ONBOARDING_BLOCKS } from '@/lib/onboarding-blocks';
 import { useStore } from '@/lib/store';
 import type { RoutineBlock } from '@/lib/types';
 import { useRouter } from 'expo-router';
@@ -59,9 +59,12 @@ export default function OnboardingScreen() {
       endTime: BLOCK_TIMES[entry.id].end,
       source: 'onboarding' as const,
     }));
-    finishOnboarding(blocks);
-    toast.show('Rutinitas terpetakan. Bisa diubah kapan saja di Profil.');
-    router.dismissTo('/');
+    finishOnboarding(blocks)
+      .then(() => {
+        toast.show('Rutinitas terpetakan. Bisa diubah kapan saja di Profil.');
+        router.dismissTo('/');
+      })
+      .catch((err) => toast.show(err instanceof Error ? err.message : 'Gagal menyimpan.'));
   };
 
   return (
