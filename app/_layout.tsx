@@ -1,5 +1,6 @@
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { BootGate } from '@/components/app/boot-gate';
+import { NotificationBridge } from '@/components/app/notification-bridge';
 import { ToastProvider } from '@/components/app/toast';
 import '@/global.css';
 import { StoreProvider } from '@/lib/store';
@@ -37,6 +38,7 @@ export default function RootLayout() {
         <StoreProvider>
           <ToastProvider>
             <StatusBar style="dark" />
+            <NotificationBridge />
             <BootGate>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />

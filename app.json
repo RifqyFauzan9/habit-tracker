@@ -24,7 +24,14 @@
       "expo-font",
       "@react-native-community/datetimepicker",
       "expo-splash-screen",
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-notifications",
+        {
+          "color": "#2F6B4F",
+          "defaultChannel": "reminders"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

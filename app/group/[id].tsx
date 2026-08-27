@@ -13,8 +13,9 @@ import {
   Subtitle,
   Tag,
 } from '@/components/app/ui';
-import { describeDays, formatDate } from '@/lib/date';
+import { describeDays, formatDate, WEEKDAY_LABELS } from '@/lib/date';
 import { completionRate, currentStreak, longestStreak } from '@/lib/gates';
+import { isRiskyDay, RISKY_LEAD_MINUTES } from '@/lib/reminder-timing';
 import { useStore } from '@/lib/store';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -40,6 +41,10 @@ export default function GroupDetailScreen() {
 
   const gates = store.gatesFor(group.id);
   const tag = store.tagFor(group.id);
+  // Same rule the scheduler uses, so the copy can never disagree with reality.
+  const riskyDays = group.days
+    .filter((day) => isRiskyDay(group.id, day, store.logs))
+    .map((day) => WEEKDAY_LABELS[day]);
   const rate = completionRate(group, store.logs);
   const mastered = group.status === 'mastered';
 
@@ -150,16 +155,27 @@ export default function GroupDetailScreen() {
             </View>
           </Card>
 
-          <Card className="mt-4 flex-row items-center justify-between">
-            <View className="flex-1">
-              <Text className="text-[15px] font-bold text-ink">Pengingat</Text>
-              <Muted>Satu notifikasi menjelang {group.startTime}</Muted>
+          <Card className="mt-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text className="text-[15px] font-bold text-ink">Pengingat</Text>
+                <Muted>Satu notifikasi menjelang {group.startTime}</Muted>
+              </View>
+              <Switch
+                value={group.reminderEnabled}
+                onValueChange={() => store.toggleReminder(group.id)}
+                trackColor={{ true: 'rgb(47,107,79)', false: 'rgb(217,225,218)' }}
+              />
             </View>
-            <Switch
-              value={group.reminderEnabled}
-              onValueChange={() => store.toggleReminder(group.id)}
-              trackColor={{ true: 'rgb(47,107,79)', false: 'rgb(217,225,218)' }}
-            />
+            {group.reminderEnabled && riskyDays.length > 0 ? (
+              <>
+                <Divider className="my-3" />
+                <Muted>
+                  {riskyDays.join(' · ')} sering terlewat, jadi pengingatnya dikirim {RISKY_LEAD_MINUTES} menit
+                  lebih awal khusus hari itu.
+                </Muted>
+              </>
+            ) : null}
           </Card>
 
           {confirmingEarly ? (
